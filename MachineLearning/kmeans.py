@@ -173,7 +173,11 @@ class GUI:
 		self.pRad = .5
 		self.CT = CoordTransform(self.canvasHeight, self.canvasWidth,
 								 self.xMin, self.xMax, self.yMin, self.yMax)
-		
+
+#	---------------------------------------------------------------------------------#	
+#	--------------------------INITIALIZING CONSTANTS --------------------------------#	
+#	---------------------------------------------------------------------------------#	
+
 		numPoints = 1000
 		k = 5			 
 		self.points = randomPoints((self.xMin,self.xMax), (self.yMin, self.yMax), numPoints)
@@ -184,6 +188,10 @@ class GUI:
 		self.states = ["MEANS", "NEAREST", "CENTER"]
 		self.currentState = 0;			 
 		self.epsilon = 1
+		
+#	---------------------------------------------------------------------------------#	
+#	---------------------------------------------------------------------------------#	
+#	---------------------------------------------------------------------------------#
 			
 	#canvas goes from -10,10
 	def redrawAll(self,canvas,state):

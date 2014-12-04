@@ -126,7 +126,7 @@ class ClusteringSimulation:
 		
 		
 class GUI:
-	def __init__(self):
+	def __init__(self, high_gui):
 		root = Tk()
 		self.canvasWidth = 400
 		self.canvasHeight = 400
@@ -134,6 +134,7 @@ class GUI:
 		self.canvas = canvas
 		canvas.pack()
 		self.init()#maxDisplay)
+		self.high_gui = high_gui
 		self.timerFired(canvas)
 		root.mainloop()
 	
@@ -169,7 +170,7 @@ class GUI:
 		self.xMin = -100
 		self.xMax = 100
 		self.tWidth = 1
-		self.tickPeriod = 3000
+		self.tickPeriod = 500
 		self.pRad = .5
 		self.CT = CoordTransform(self.canvasHeight, self.canvasWidth,
 								 self.xMin, self.xMax, self.yMin, self.yMax)
@@ -209,10 +210,11 @@ class GUI:
 		else:
 			canvas.delete(ALL)
 			means = map(lambda p: self.CT.MtoV(p),self.means)
-			for row in xrange(self.canvasHeight):
-				for col in xrange(self.canvasWidth):
-					closest = self.game.closestPoint(Point(col,row), means)
-					canvas.create_rectangle(col,row,col+1,row+1, width=0, fill = closest.color)
+			if (self.high_gui):
+				for row in xrange(self.canvasHeight):
+					for col in xrange(self.canvasWidth):
+						closest = self.game.closestPoint(Point(col,row), means)
+						canvas.create_rectangle(col,row,col+1,row+1, width=0, fill = closest.color)
 					
 			self.drawAxis(canvas)
 			for p in self.points:
@@ -256,4 +258,4 @@ class GUI:
 				canvas.create_line(start, yMid - self.tWidth, start, yMid + self.tWidth)
 				start += xInt		
 		
-G = GUI()
+G = GUI(False)

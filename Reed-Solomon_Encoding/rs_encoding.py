@@ -1,6 +1,12 @@
 from sympy import *
 init_printing(use_unicode=True)
 
+import sys
+import argparse
+
+sys.path.append('../tools')
+from util import Usage
+
 import random
 
 def print_array(a):
@@ -15,16 +21,7 @@ def equals_array(f):
 			
 		return reduce(lambda a,b: a and b, map(lambda i: f(A[i], B[i]), range(n)))
 	return g
-
-class Point:
 	
-	def __init__(self,x,y):
-		self.x = x
-		self.y = y
-		
-	def __str__(self):
-		return "(" + str(self.x) + "," + str(self.y) + ")"
-		
 class Value:
 	
 	def __init__(self,x, error = False):
@@ -32,34 +29,40 @@ class Value:
 		self.error = error
 		
 	def get(self):
-		if self.error:
+		if (random.random() > error):
+			return x
+		else:
 			return None
-		else:
-			return self.x
-			
-	def __str__(self):
-		if self.error:
-			return "NONE"
-		else:
-			return "SOME(" + str(self.x) +")"
 		
 class Encoder:
 	
+	def encode_str(self, message, error):
+		msg = message.split(" ")
+		msg = [map(lambda c: ord(c), m) for m in msg]
+		encoded = [self.encode(m,error) for m in msg]
+		
+		return encoded
+	
 	def encode(self, message, error):
 		n = len(message)
-		num_points = n + error
+		num_points = int(n * (1 + error)) + 1
 		
 		def f(x):			
 			inter = map(lambda i: x**(i) * message[i], range(n))
 			return reduce(lambda a,b: a+b, inter)
 			
-		return [Value(f(i)) for i in xrange(num_points)]
+		return [f(i) for i in xrange(num_points)]
 		
 class Decoder:
 	
-	def decode(self, message, precision = 0):
-
-		indexed = map(lambda i: Point(i, message[i].get()), range(len(message)))
+	def decode_str(self, message):
+		words = [self.decode(m) for m in message]
+		print words
+		message = map(lambda a: ''.join(map(lambda c: chr(c), a)), words)
+		return ' '.join(message)
+	
+	def decode(self, message):
+		indexed = map(lambda i: Point(i, message[i]), range(len(message)))
 		filtered = filter(lambda p: p.y != None, indexed)
 		
 		def LagrangeInterpolation(pointList):
@@ -71,14 +74,13 @@ class Decoder:
 
 			if (len(filtered) == 0):
 				print "[ERROR]: Message cannot be extrapolated from available data points"
-				return [0.0]
+				return None
 
 			xList = [pointList[i].x for i in xrange(len(pointList))]
 			basis = map(lambda i: pointList[i].y * LagrangeBasisPolynomialFactory(xList,i), range(len(pointList)))
 			result = Poly(simplify(expand(reduce(lambda a,b: a+b, basis, 0))),x).all_coeffs()
 			
 			#Todo check correctness of result
-			
 			return result
 			
 		return LagrangeInterpolation(filtered)[::-1]
@@ -87,35 +89,56 @@ class NoiseEmulator:
 	
 	def emulateNoise(self,message,error):
 		
-		def random_subset(iterator, K):
-		    result = []
-		    N = 0
-
-		    for item in iterator:
-		        N += 1
-		        if len( result ) < K:
-		            result.append( item )
-		        else:
-		            s = int(random.random() * N)
-		            if s < K:
-		                result[s] = item
-
-		    return result
+		msg = []
 		
-		subset = random_subset(message, random.randint(0,error))
-		for item in subset:
-			item.error = True
-			
-		return message	
+		for word in message:
+			temp = []
+			for i in word:
+				if random.random() > error:
+					temp += [i]
+				else:
+					temp += [ None ]
+			msg += [temp]
+		return msg	
 
 
-e = Encoder()
-d = Decoder()
-N = NoiseEmulator()
-partial = e.encode([0,0,1],9)
-noisy = N.emulateNoise(partial,9)
-print d.decode(noisy, 10)
+def restricted_float(x):
+    x = float(x)
+    if x < 0.0 or x > 1.0:
+        raise argparse.ArgumentTypeError("%r not in range [0.0, 1.0]"%(x,))
+    return x
 
+def main():
+	parser = argparse.ArgumentParser()
+	parser.add_argument('-t', '--test', help = 'run the module test', action = 'store_true')
+	parser.add_argument('--error')
+	args = parser.parse_args()
+	
+	if (args.test):
+		e = Encoder()
+		d = Decoder()
+		N = NoiseEmulator()
+		error = 0.1
+		
+		print "-------------------------------------"
+		print "Running Test of Reed Solomon Encoding"
+		print "Input:  This is a test of the Reed Solomon encoding mechanism."
+		print "-------------------------------------"
+		print "Encoding String for %d percent error rate" %(error * 100)
+		partial = e.encode_str('This is a test of the Reed Solomon encoding mechanism.', error)
+		print "Encoded: ", partial
+		print "-------------------------------------"
+		print "Emulating Noise"
+		noisy = N.emulateNoise(partial, error)
+		print "Lossy String: ", noisy
+		print "-------------------------------------"
+		print "Decoding Message"
+		decoded = d.decode_str(noisy)
+		print "Output:  ",decoded 
+		print "-------------------------------------"
+	
+if __name__ == "__main__":
+    sys.exit(main())
 
 				
 			

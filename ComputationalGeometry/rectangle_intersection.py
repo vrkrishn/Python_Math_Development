@@ -15,12 +15,13 @@ class RectangleSimulation(Simulation):
 	
 		S = inputRect
 		if (inputRect == None):
-			S = self.randomRectangles((xMin, xMax), (yMin, yMax), 50)
+			S = self.randomRectangles((xMin, xMax), (yMin, yMax), 5)
 			
 		self.S = S
 	
 	def step(self):
 		maximum = self.rectangle_intersection(self.S)
+		print maximum
 		return ["FINISHED", maximum, self.S]
 	
 	def rectangle_intersection(self, S):
@@ -31,14 +32,9 @@ class RectangleSimulation(Simulation):
 		events = map(lambda r: (r.tl.y, (r.tl.x, r.br.x) , -1), S) + map(lambda r: (r.br.y, (r.tl.x, r.br.x), 1), S)
 		events = sorted(events, key = lambda ev: ev[0])
 	
-		print map(lambda r: str(r), S)
-	
 		for i in xrange(len(events)):
 			ev = events[i]
-			#print 
-			#print "Inserting ", ev
 			IntervalTree.update(T, ev[1][0], ev[1][1], ev[2])
-			#print IntervalTree.str(T)
 		
 		IntervalTree.push_through(T)
 		return IntervalTree.get_max(T)
@@ -72,27 +68,10 @@ class RectangleIntersectionGUI(GUI):
 		super(RectangleIntersectionGUI, self).__init__(False, canvasWidth, canvasHeight, game, 10)
 
 	def redrawAll(self, canvas, state):
-		print "---------------------------"
-		print "Max Intersection: ", state[1]
 		rects = state[2]
 		gui_rects = map(lambda r: Rect(self.CT.MtoV(r.tl), self.CT.MtoV(r.br)), rects)
 		
-		colors = []
-		red = 255;
-		green = 0;
-		stepSize = 2 * 255 / (state[1] + 1)
-		while(green < 255):
-			colors += ["#%02x%02x%02x" %(red, green, 0)] 
-			green += stepSize 
-			if(green > 255): 
-				green = 255 
-		
-		while(red > 0): 
-			red -= stepSize 
-			if(red < 0): 
-				red = 0
-			colors += ["#%02x%02x%02x" %(red, green, 0)]
-
+		colors = self.colorRange(state[1])
 		
 		for row in xrange(self.cWidth):
 			for col in xrange(self.cHeight):
@@ -109,8 +88,6 @@ class RectangleIntersectionGUI(GUI):
 		for r in gui_rects:
 			canvas.create_rectangle(r.tl.x, r.tl.y, r.br.x, r.br.y, width = 1)
 		
-		
-		print gui_rects
 
 def inputRectangles(points):
 	S = []
